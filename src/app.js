@@ -1,18 +1,15 @@
 import express from 'express';
-import { connectDB } from './config/db.js';
+import productsRouter from './routes/products.routes.js';
+import categoriesRouter from './routes/categories.routes.js';
 
 const app = express();
 const port = 3000;
 app.use(express.json());
+app.use(productsRouter);
+app.use(categoriesRouter);
 
 app.get('/', async(req, res) => {
-    try {
-        const pool = await connectDB();
-        const result = await pool.request().query('SELECT * FROM Usuarios');
-        res.json(result.recordset); 
-    } catch (error) {
-        console.log(error);
-    }
+    res.send('server is running');
 })
 
 app.listen(port, () => {
