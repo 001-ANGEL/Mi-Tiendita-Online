@@ -8,13 +8,13 @@ import {
 
 const router = Router();
 
-router.get("/productos", getProducts);
+router.get("/api/productos", getProducts);
 
-router.get("/productos/:id", getProduct);
+router.get("/api/productos/:id", getProduct);
 
-router.post("/productos", createProduct);
+router.post("/api/productos", createProduct);
 
-router.put("/productos/:id", updateProduct);
+router.put("/api/productos/:id", updateProduct);
 
 
 export default router;

@@ -93,8 +93,6 @@ export const createProduct = async (req, res) => {
         "INSERT INTO Productos (nombre, marca, codigo, stock, precio, fecha_creacion, foto, descripcion, idEstado, idCategoria) VALUES (@nombre, @marca, @codigo, @stock, @precio, @fecha_creacion, @foto, @descripcion, @idEstado, @idCategoria); SELECT SCOPE_IDENTITY() AS idProducto;"
       );
 
-    console.log(result);
-
     res.json({
       id: result.recordset[0].idProducto,
       nombre: req.body.nombre,
@@ -119,6 +117,12 @@ export const updateProduct = async (req, res) => {
   try {
     const pool = await connectDB();
 
+    const {nombre, marca, codigo, stock, precio, foto, descripcion, idEstado, idCategoria} = req.body;
+
+    if (!nombre || !marca || !codigo || !stock || !precio || !idEstado || !idCategoria) {
+      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
+
     const result = await pool
       .request()
       .input("nombre", sql.VarChar, req.body.nombre)
@@ -134,10 +138,9 @@ export const updateProduct = async (req, res) => {
       .query(
         `UPDATE Productos SET nombre = @nombre, marca = @marca, codigo = @codigo, stock = @stock, precio = @precio, fecha_creacion = @fecha_creacion, foto = @foto, descripcion = @descripcion, idEstado = @idEstado, idCategoria = @idCategoria WHERE idProducto = ${req.params.id};`
       );
-    console.log(result);
 
     if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ message: "Producto no encontrado" });
     }
 
     res.json({
