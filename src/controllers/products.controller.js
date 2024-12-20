@@ -1,6 +1,45 @@
 import { connectDB } from "../config/db.js";
 import sql from "mssql";
 
+//Validaciones
+const validateProductsFields = (req, res) => {
+  const {
+    nombre,
+    marca,
+    codigo,
+    stock,
+    precio,
+    foto,
+    descripcion,
+    idEstado,
+    idCategoria,
+  } = req.body;
+
+  if (
+    !nombre ||
+    !marca ||
+    !codigo ||
+    !stock ||
+    !precio ||
+    !idEstado ||
+    !idCategoria
+  ) {
+    return { status: 400, message: "Faltan campos por llenar" };
+  }
+
+  // Validar que stock no sea negativo
+  if (stock < 0) {
+    return res.status(400).json({ message: "El stock no puede ser negativo" });
+  }
+
+  // Validar que el precio no sea negativo
+  if (precio < 0) {
+    return res.status(400).json({ message: "El precio no puede ser negativo" });
+  }
+
+  return null;
+};
+
 //* -------------------getProducts
 export const getProducts = async (req, res) => {
   try {
@@ -12,7 +51,7 @@ export const getProducts = async (req, res) => {
     res.json(result.recordset);
   } catch (error) {
     console.log("ERROR AL OBTENER LOS PRODUCTOS", error);
-    res.statust(404).json({ message: "Error al obtener los productos" });
+    res.status(500).json({ message: "Error al obtener los productos" });
   }
 };
 
@@ -31,49 +70,18 @@ export const getProduct = async (req, res) => {
 
     return res.json(result.recordset[0]);
   } catch (error) {
-    res.status(404).json({ message: "Error al obtener el producto" });
+    res.status(500).json({ message: "Error al obtener el producto" });
   }
 };
 
 //* ------------------createProduct
 export const createProduct = async (req, res) => {
   try {
-    const {
-      nombre,
-      marca,
-      codigo,
-      stock,
-      precio,
-      foto,
-      descripcion,
-      idEstado,
-      idCategoria,
-    } = req.body;
-
-    if (
-      !nombre ||
-      !marca ||
-      !codigo ||
-      !stock ||
-      !precio ||
-      !idEstado ||
-      !idCategoria
-    ) {
-      return res.status(400).json({ message: "Faltan campos obligatorios" });
-    }
-
-    // Validar que stock no sea negativo
-    if (stock < 0) {
+    const validation = validateProductsFields(req, res);
+    if (validation) {
       return res
-        .status(400)
-        .json({ message: "El stock no puede ser negativo" });
-    }
-
-    // Validar que el precio no sea negativo
-    if (precio < 0) {
-      return res
-        .status(400)
-        .json({ message: "El precio no puede ser negativo" });
+        .status(validation.status)
+        .json({ message: validation.message });
     }
 
     const pool = await connectDB();
@@ -117,10 +125,11 @@ export const updateProduct = async (req, res) => {
   try {
     const pool = await connectDB();
 
-    const {nombre, marca, codigo, stock, precio, foto, descripcion, idEstado, idCategoria} = req.body;
-
-    if (!nombre || !marca || !codigo || !stock || !precio || !idEstado || !idCategoria) {
-      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    const validation = validateProductsFields(req, res);
+    if (validation) {
+      return res
+        .status(validation.status)
+        .json({ message: validation.message });
     }
 
     const result = await pool
@@ -130,13 +139,13 @@ export const updateProduct = async (req, res) => {
       .input("codigo", sql.VarChar, req.body.codigo)
       .input("stock", sql.Int, req.body.stock)
       .input("precio", sql.Decimal, req.body.precio)
-      .input("fecha_creacion", sql.DateTime, new Date())
       .input("foto", sql.NVarChar, req.body.foto)
       .input("descripcion", sql.NVarChar, req.body.descripcion)
       .input("idEstado", sql.Int, req.body.idEstado)
       .input("idCategoria", sql.Int, req.body.idCategoria)
+      .input("idProducto", sql.Int, req.params.id)
       .query(
-        `UPDATE Productos SET nombre = @nombre, marca = @marca, codigo = @codigo, stock = @stock, precio = @precio, fecha_creacion = @fecha_creacion, foto = @foto, descripcion = @descripcion, idEstado = @idEstado, idCategoria = @idCategoria WHERE idProducto = ${req.params.id};`
+        `UPDATE Productos SET nombre = @nombre, marca = @marca, codigo = @codigo, stock = @stock, precio = @precio, foto = @foto, descripcion = @descripcion, idEstado = @idEstado, idCategoria = @idCategoria WHERE idProducto = @idProducto;`
       );
 
     if (result.rowsAffected[0] === 0) {

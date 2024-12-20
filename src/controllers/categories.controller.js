@@ -1,8 +1,16 @@
 import { connectDB } from "../config/db.js";
 import sql from "mssql";
 
+const validationCategoriesFields = (req, res) => {
+  const { nombre, descripcion, idEstado } = req.body;
+
+  if (!nombre || !descripcion || !idEstado) {
+    return { status: 400, message: "Faltan campos por llenar" };
+  }
+};
+
 //* -------------------getCategories
-export const getCategories = async (res) => {
+export const getCategories = async (req, res) => {
   try {
     const pool = await connectDB();
     const result = await pool
@@ -11,7 +19,7 @@ export const getCategories = async (res) => {
     res.json(result.recordset);
   } catch (error) {
     console.log("ERROR AL OBTENER LAS CATEGORIAS", error);
-    res.status(404).json({ message: "Error al obtener las categorias" });
+    res.status(500).json({ message: "Error al obtener las categorias" });
   }
 };
 
@@ -34,79 +42,80 @@ export const getCategoryById = async (req, res) => {
     return res.json(result.recordset[0]);
   } catch (error) {
     console.log("ERROR AL OBTENER UNA CATEGORIA", error);
-    res.status(404).json({ message: "Error al obtener la categoria" });
+    res.status(500).json({ message: "Error al obtener la categoria" });
   }
 };
 
 //*-------------------createCategory
 
 export const createCategory = async (req, res) => {
-
-try {
-
-    const {nombre, descripcion, idEstado} = req.body;
-
-    if(!nombre || !descripcion || !idEstado){
-        return res.status(400).json({message: 'Faltan campos por llenar'});
+  try {
+    const validate = validationCategoriesFields(req, res);
+    if (validate) {
+      return res
+        .status(validate.status)
+        .json({ message: validate.message });
     }
 
     const pool = await connectDB();
     const result = await pool
-    .request()
-    .input('nombre', sql.VarChar, req.body.nombre)
-    .input('descripcion', sql.VarChar, req.body.descripcion)
-    .input('idEstado', sql.Int, req.body.idEstado)
-    .input('fecha_creacion', sql.DateTime, new Date())
-    .query('INSERT INTO categoriaProductos (nombre, descripcion, idEstado, fecha_creacion ) VALUES (@nombre, @descripcion, @idEstado, @fecha_creacion); SELECT SCOPE_IDENTITY() AS idCategoria;');
+      .request()
+      .input("nombre", sql.VarChar, req.body.nombre)
+      .input("descripcion", sql.VarChar, req.body.descripcion)
+      .input("idEstado", sql.Int, req.body.idEstado)
+      .input("fecha_creacion", sql.DateTime, new Date())
+      .query(
+        "INSERT INTO categoriaProductos (nombre, descripcion, idEstado, fecha_creacion ) VALUES (@nombre, @descripcion, @idEstado, @fecha_creacion); SELECT SCOPE_IDENTITY() AS idCategoria;"
+      );
 
     res.json({
-        id: result.recordset[0].idCategoria,
-        nombre: req.body.nombre,
-        descripcion: req.body.descripcion,
-        idEstado: req.body.idEstado,
-        fecha_creacion: new Date()
+      id: result.recordset[0].idCategoria,
+      nombre: req.body.nombre,
+      descripcion: req.body.descripcion,
+      idEstado: req.body.idEstado,
+      fecha_creacion: new Date(),
     });
-} catch (error) {
-    console.log('ERROR AL CREAR UNA CATEGORIA', error);
-    res.status(404).json({message: 'Error al crear la categoria'});
-}
-
+  } catch (error) {
+    console.log("ERROR AL CREAR UNA CATEGORIA", error);
+    res.status(404).json({ message: "Error al crear la categoria" });
+  }
 };
 
 //*-------------------updateCategory
 export const updateCategory = async (req, res) => {
-
-try {
-    const {nombre, descripcion, idEstado} = req.body;
-
-    if(!nombre || !descripcion || !idEstado){
-        return res.status(400).json({message: 'Faltan campos por llenar'});
+  try {
+    const validate = validationCategoriesFields(req, res);
+    if (validate) {
+      return res
+        .status(validate.status)
+        .json({ message: validate.message });
     }
-  
+
     const pool = await connectDB();
     const result = await pool
-    .request()
-    .input('nombre', sql.VarChar, req.body.nombre)
-    .input('descripcion', sql.VarChar, req.body.descripcion)
-    .input('idEstado', sql.Int, req.body.idEstado)
-    .input('fecha_actualizacion', sql.DateTime, new Date())
-    .input('idCategoria', sql.Int, req.params.id)
-    .query('UPDATE categoriaProductos SET nombre = @nombre, descripcion = @descripcion, idEstado = @idEstado, fecha_actualizacion = @fecha_actualizacion WHERE idCategoria = @idCategoria; SELECT SCOPE_IDENTITY() AS idCategoria;'); ;
-  
+      .request()
+      .input("nombre", sql.VarChar, req.body.nombre)
+      .input("descripcion", sql.VarChar, req.body.descripcion)
+      .input("idEstado", sql.Int, req.body.idEstado)
+      .input("fecha_actualizacion", sql.DateTime, new Date())
+      .input("idCategoria", sql.Int, req.params.id)
+      .query(
+        "UPDATE categoriaProductos SET nombre = @nombre, descripcion = @descripcion, idEstado = @idEstado, fecha_actualizacion = @fecha_actualizacion WHERE idCategoria = @idCategoria;"
+      );
 
     if (result.rowsAffected[0] === 0) {
-        return res.status(404).json({ message: "Producto no encontrado" });
-      }
+      return res.status(404).json({ message: "Categoria no encontrado" });
+    }
 
     res.json({
-        id: req.params.id,
-        nombre: req.body.nombre,
-        descripcion: req.body.descripcion,
-        idEstado: req.body.idEstado,
-        fecha_actualizacion: new Date()
+      id: req.params.id,
+      nombre: req.body.nombre,
+      descripcion: req.body.descripcion,
+      idEstado: req.body.idEstado,
+      fecha_actualizacion: new Date(),
     });
-} catch (error) {
-    console.log('ERROR AL ACTUALIZAR UNA CATEGORIA', error);
-    res.status(404).json({message: 'Error al actualizar la categoria'});
-}
+  } catch (error) {
+    console.log("ERROR AL ACTUALIZAR UNA CATEGORIA", error);
+    res.status(404).json({ message: "Error al actualizar la categoria" });
+  }
 };
