@@ -1,14 +1,18 @@
 import express from 'express';
+
 import productsRouter from './routes/products.routes.js';
 import categoriesRouter from './routes/categories.routes.js';
 import statesRouter from './routes/states.routes.js';
+import usersRoutes from './routes/users.routes.js';
 
 const app = express();
 const port = 3000;
 app.use(express.json());
+
 app.use(productsRouter);
 app.use(categoriesRouter);
 app.use(statesRouter);
+app.use(usersRoutes);
 
 app.get('/', async(req, res) => {
     res.send('server is running');
